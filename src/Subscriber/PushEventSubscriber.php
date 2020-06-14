@@ -4,9 +4,11 @@
 namespace App\Subscriber;
 
 
+use App\Assembler\CommitAssembler;
 use App\Assembler\GithubRepoAssembler;
 use App\Command\ImportGithubEventsCommand;
 use App\Dto\Commit;
+use App\Entity\Commit as CommitEntity;
 use App\Dto\PushEventPayload;
 use App\Entity\GithubRepo as GithubRepoEntity;
 use App\Event\GithubArchiveEvents;
@@ -39,6 +41,11 @@ class PushEventSubscriber implements EventSubscriberInterface, LineProcessEventS
     protected $repoAssembler;
 
     /**
+     * @var CommitAssembler $commitAssembler
+     */
+    protected $commitAssembler;
+
+    /**
      * @inheritDoc
      */
     public static function getSubscribedEvents()
@@ -51,16 +58,19 @@ class PushEventSubscriber implements EventSubscriberInterface, LineProcessEventS
     public function __construct(
         EntityManagerInterface $entityManager,
         SerializerInterface $serializer,
-        GithubRepoAssembler $repoAssembler
+        GithubRepoAssembler $repoAssembler,
+        CommitAssembler $commitAssembler
     ) {
         $this->entityManager = $entityManager;
         $this->serializer = $serializer;
         $this->repoAssembler = $repoAssembler;
+        $this->commitAssembler = $commitAssembler;
     }
 
     /**
      * For processing a line from a commit POV
      * @param LineProcessEvent $lineProcessEvent
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function onLineProcess(LineProcessEvent $lineProcessEvent)
     {
@@ -89,8 +99,12 @@ class PushEventSubscriber implements EventSubscriberInterface, LineProcessEventS
             'App\Dto\Commit[]'
         );
 
-        dump($commits);
-        die();
+        /** @var Commit $commit */
+        foreach ($commits as $commit) {
+            /** @var CommitEntity $commitEntity */
+            $commitEntity = $this->commitAssembler->getEntity(CommitEntity::class, $commit);
+            $commitEntity->setCreatedAt($githubEvent->getCreatedAt());
+        }
 
         $this->entityManager->flush();
 
