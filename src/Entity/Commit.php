@@ -8,25 +8,25 @@ use Doctrine\ORM\Mapping as ORM;
 /**
  * @ORM\Entity(repositoryClass=CommitRepository::class)
  */
-class Commit
+class Commit implements EntityInterface
 {
     /**
      * @ORM\Id()
      * @ORM\GeneratedValue()
      * @ORM\Column(type="integer")
      */
-    private $id;
+    protected $id;
 
     /**
      * @ORM\Column(type="string", length=20)
      */
-    private $sha1;
+    protected $sha1;
 
     /**
-     * @ORM\ManyToOne(targetEntity=Actor::class, inversedBy="commits")
+     * @ORM\ManyToOne(targetEntity=GithubRepo::class, inversedBy="commits")
      * @ORM\JoinColumn(nullable=false)
      */
-    private $actor;
+    protected $githubRepo;
 
     public function getId(): ?int
     {
@@ -45,14 +45,14 @@ class Commit
         return $this;
     }
 
-    public function getActor(): ?Actor
+    public function getGithubRepo(): ?GithubRepo
     {
-        return $this->actor;
+        return $this->githubRepo;
     }
 
-    public function setActor(?Actor $actor): self
+    public function setGithubRepo(?GithubRepo $githubRepo): self
     {
-        $this->actor = $actor;
+        $this->githubRepo = $githubRepo;
 
         return $this;
     }
