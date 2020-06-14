@@ -26,16 +26,19 @@ class GithubRepoAssembler extends Assembler implements AssemblerInterface
      */
     public function getEntity(string $entityFqcn, DtoInterface $dto): EntityInterface
     {
+        $wasNew = false;
+
         if ($entityFqcn !== GithubRepoEntity::class || !($dto instanceof GithubRepo)) {
             throw new InvalidArgumentException("This assembler is for repo only");
         }
 
-        $githubRepoEntity = $this->entityManager->getRepository($entityFqcn)->find($dto->getId());
+        $githubRepoEntity = $this->entityManager->getRepository($entityFqcn)->findOneBy(['githubId' => $dto->getId()]);
 
         // Creates if not exists
         if (!$githubRepoEntity instanceof GithubRepoEntity) {
             $githubRepoEntity = new GithubRepoEntity();
             $this->entityManager->persist($githubRepoEntity);
+            $wasNew = true;
         }
 
         // Mapping
@@ -44,6 +47,11 @@ class GithubRepoAssembler extends Assembler implements AssemblerInterface
             ->setUrl($dto->getUrl())
             ->setName($dto->getName())
         ;
+
+        if($wasNew) {
+            // Must flush each time to ensure repo will be find next time, even if it is inside a same batch
+            $this->entityManager->flush();
+        }
 
         return $githubRepoEntity;
     }

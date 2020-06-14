@@ -7,7 +7,7 @@ use App\Event\GithubArchiveEvents;
 use App\Event\LineProcessEvent;
 use App\Exception\DayNotValidException;
 use App\Exception\GithubEventNotSupportedException;
-use App\Model\Person;
+use App\Exception\HourNotValidException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -15,7 +15,6 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
-use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\Serializer\SerializerInterface;
 
@@ -29,19 +28,15 @@ class ImportGithubEventsCommand extends Command
     // Command option
     public const DAY_OPTION_NAME = 'day';
     public const TYPE_OPTION_NAME = 'type';
+    public const HOUR_OPTION_NAME = 'hour';
     public const TYPE_OPTION_PUSH = 'PushEvent';
 
     // Placeholder constants
-    public const PLACEHOLDER_CHAR = '%';
-    public const YEAR = self::PLACEHOLDER_CHAR . 'Y';
-    public const MONTH = self::PLACEHOLDER_CHAR . 'M';
-    public const DAY = self::PLACEHOLDER_CHAR . 'D';
-    public const HOUR = self::PLACEHOLDER_CHAR . 'H';
 
     public const TEMP_GZ_FILE_PATH = '/tmp/data.gz';
     public const CURRENT_JSON_FILE_PATH = '/tmp/data.json';
 
-    public const DATA_CHAIN = 'https://data.gharchive.org/' . self::YEAR . '-' . self::MONTH . '-' . self::DAY . '-' . self::HOUR . '.json.gz';
+    public const DATA_CHAIN = 'https://data.gharchive.org/%s-%s-%s-%s.json.gz';
 
     public const BATCH_SIZE = 500;
 
@@ -84,6 +79,11 @@ class ImportGithubEventsCommand extends Command
     protected $dayToRetrieve;
 
     /**
+     * @var int
+     */
+    protected $hourToRetrieve;
+
+    /**
      * @var array $eventTypes
      */
     protected $eventTypes;
@@ -121,6 +121,13 @@ class ImportGithubEventsCommand extends Command
                 (new \DateTime())->format('Ymd')
             )
             ->addOption(
+                static::HOUR_OPTION_NAME,
+                'hh',
+                InputOption::VALUE_REQUIRED,
+                'the hour you want to retrieve commits from. 0-23',
+                0
+            )
+            ->addOption(
                 static::TYPE_OPTION_NAME,
                 't',
                 InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
@@ -136,12 +143,17 @@ class ImportGithubEventsCommand extends Command
     {
         $day = $this->input->getOption(static::DAY_OPTION_NAME);
         $this->eventTypes = $this->input->getOption(static::TYPE_OPTION_NAME);
-
         $this->dayToRetrieve = \DateTime::createFromFormat('Ymd', $day);
+        $this->hourToRetrieve = $this->input->getOption(static::HOUR_OPTION_NAME);
 
         if (!$this->dayToRetrieve instanceof \DateTime) {
             throw new DayNotValidException("Day \"{$day}\" is not properly formatted. Use Ymd format");
         }
+
+        if (!is_numeric($this->hourToRetrieve) || $this->hourToRetrieve < 0 || $this->hourToRetrieve > 23) {
+            throw new HourNotValidException("Hour \"{$this->hourToRetrieve}\" is not properly formatted. 0-23");
+        }
+
 
         // TODO to make evolve when other events will be added
         if ($this->eventTypes !== [static::TYPE_OPTION_PUSH]) {
@@ -153,6 +165,7 @@ class ImportGithubEventsCommand extends Command
     /**
      * This store in temporary files the JSON data
      * @param string $finalDataChain
+     * TODO externalize in JsonDataProvider class
      */
     protected function provideJsonData(string $finalDataChain)
     {
@@ -190,33 +203,22 @@ class ImportGithubEventsCommand extends Command
 
         $this->io->title(sprintf('Start %s retrieve process', implode(', ', $this->eventTypes)));
 
-        // Replace first placeholded data to retrieve elements
-        // TODO use sprintf
-        $filledDataChain = str_replace(
-            [
-                static::YEAR,
-                static::MONTH,
-                static::DAY
-            ],
-            [
-                $this->dayToRetrieve->format('Y'),
-                $this->dayToRetrieve->format('m'),
-                $this->dayToRetrieve->format('d')
-            ],
-            static::DATA_CHAIN
+
+        $filledDataChain = sprintf(
+            static::DATA_CHAIN,
+            $this->dayToRetrieve->format('Y'),
+            $this->dayToRetrieve->format('m'),
+            $this->dayToRetrieve->format('d'),
+            $this->hourToRetrieve
         );
 
+        $this->io->section("Retrieving for {$this->dayToRetrieve->format('d/m/Y')} - {$this->hourToRetrieve}h");
 
-        // Loop on data splitted hour by hour to limit volume on each batch
-        for ($i = 0; $i <= $this->dayToRetrieve->format('d'); $i++) {
-            $this->io->section("Retrieving for {$this->dayToRetrieve->format('d/m/Y')} - {$i}h");
-
-//            try {
-//                $this->provideJsonData(str_replace(static::HOUR, $i, $filledDataChain));
+        try {
+            $this->provideJsonData($filledDataChain);
 
 
             $this->io->text('Handle...');
-//            while (false !== ($jsonLine = fgets($roJsonFp))) {
             foreach ($this->getLines(static::CURRENT_JSON_FILE_PATH) as $n => $jsonLine) {
                 // Normalize global event with payload untouched
                 /** @var GithubEvent $githubEvent */
@@ -231,9 +233,8 @@ class ImportGithubEventsCommand extends Command
                 unset($jsonLine);
 
 
-
                 if ($n % static::BATCH_SIZE == 0) {
-
+                    // TODO use progress bar instead
                     $this->io->text($this->convert(memory_get_usage(true)) . ' - ' . $n);
 
                     // For memory savings
@@ -248,8 +249,9 @@ class ImportGithubEventsCommand extends Command
             $this->entityManager->clear();
             flush();
             gc_collect_cycles();
-//            } catch (\Exception $exception) {
-//            }
+        } catch (\Exception $exception) {
+            // TODO elaborate
+            throw $exception;
         }
 
         return Command::SUCCESS;
@@ -258,6 +260,7 @@ class ImportGithubEventsCommand extends Command
     /**
      * @param $size
      * @return string
+     * TODO : externalize in Convert utility
      */
     protected function convert($size)
     {
@@ -269,6 +272,7 @@ class ImportGithubEventsCommand extends Command
      * To limit memory consumption by yelding line instead of building an array
      * @param $file
      * @return \Generator
+     * TODO : externalize in Memory utility
      */
     protected function getLines($file)
     {
