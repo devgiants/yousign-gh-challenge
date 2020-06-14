@@ -2,16 +2,21 @@
 
 namespace App\Command;
 
+use App\Dto\GithubEvent;
 use App\Event\GithubArchiveEvents;
 use App\Event\LineProcessEvent;
 use App\Exception\DayNotValidException;
 use App\Exception\GithubEventNotSupportedException;
+use App\Model\Person;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
+use Symfony\Component\Serializer\Serializer;
+use Symfony\Component\Serializer\SerializerInterface;
 
 /**
  * Class ImportCommitsCommand
@@ -23,7 +28,7 @@ class ImportGithubEventsCommand extends Command
     // Command option
     public const DAY_OPTION_NAME = 'day';
     public const TYPE_OPTION_NAME = 'type';
-    public const TYPE_OPTION_PUSH = 'pushEvent';
+    public const TYPE_OPTION_PUSH = 'PushEvent';
 
     // Placeholder constants
     public const PLACEHOLDER_CHAR = '%';
@@ -44,6 +49,11 @@ class ImportGithubEventsCommand extends Command
      * @var EventDispatcherInterface $eventDispatcher
      */
     protected $eventDispatcher;
+
+    /**
+     * @var Serializer $serializer
+     */
+    protected $serializer;
 
     /**
      * @var InputInterface $input
@@ -74,10 +84,12 @@ class ImportGithubEventsCommand extends Command
     /**
      * ImportGithubEventsCommand constructor.
      * @param EventDispatcherInterface $eventDispatcher
+     * @param SerializerInterface $serializer
      */
-    public function __construct(EventDispatcherInterface $eventDispatcher)
+    public function __construct(EventDispatcherInterface $eventDispatcher, SerializerInterface $serializer)
     {
         $this->eventDispatcher = $eventDispatcher;
+        $this->serializer = $serializer;
         parent::__construct();
     }
 
@@ -133,7 +145,7 @@ class ImportGithubEventsCommand extends Command
     {
         // Get data
         $this->io->text('Get data from GitHub...');
-        file_put_contents('/tmp/data.gz', file_get_contents($finalDataChain));
+        file_put_contents(static::TEMP_GZ_FILE_PATH, file_get_contents($finalDataChain));
 
         // Extraction
         $this->io->text('Extract...');
@@ -161,7 +173,7 @@ class ImportGithubEventsCommand extends Command
         $this->io->title(sprintf('Start %s retrieve process', implode(', ', $this->eventTypes)));
 
         // Replace first placeholded data to retrieve elements
-        // TODO add explanation on str_replace vs preg_replace
+        // TODO use sprintf
         $filledDataChain = str_replace(
             [
                 static::YEAR,
@@ -176,45 +188,32 @@ class ImportGithubEventsCommand extends Command
             static::DATA_CHAIN
         );
 
+
         // Loop on data splitted hour by hour to limit volume on each batch
         for ($i = 0; $i <= $this->dayToRetrieve->format('d'); $i++) {
             $this->io->section("Retrieving for {$this->dayToRetrieve->format('d/m/Y')} - {$i}h");
 
+//            try {
+//                $this->provideJsonData(str_replace(static::HOUR, $i, $filledDataChain));
 
-            try {
+            // Loop on results
+            $roJsonFp = fopen(static::CURRENT_JSON_FILE_PATH, 'r');
 
-                $this->provideJsonData(str_replace(static::HOUR, $i, $filledDataChain));
+            $this->io->text('Handle...');
+            while (false !== ($jsonLine = fgets($roJsonFp))) {
+                // Normalize global event with payload untouched
+                /** @var GithubEvent $githubEvent */
+                $githubEvent = $this->serializer->deserialize($jsonLine, GithubEvent::class, 'json');
 
-                // Loop on results
-                $roJsonFp = fopen(static::CURRENT_JSON_FILE_PATH, 'r');
-
-                while (false !== ($jsonLine = fgets($roJsonFp))) {
-
-                    // Use event to allow flexible data handling
-                    $this->eventDispatcher->dispatch(
-                        LineProcessEvent::createFromJsonLine($jsonLine),
-                        GithubArchiveEvents::LINE_PROCESS
-                    );
-
-
-                }
-            } catch (\Exception $exception) {
+                // Use event to allow flexible payload handling
+                $this->eventDispatcher->dispatch(
+                    LineProcessEvent::createFromGithubEvent($githubEvent),
+                    GithubArchiveEvents::LINE_PROCESS
+                );
             }
-//            $j = 0;
-//            foreach($data as $datum) {
-//                $j++;
+//            } catch (\Exception $exception) {
 //            }
-//            echo $j;
-
-//            fputs($pointer, file_get_contents($finalDataChain));
-//            rewind($pointer);
-
-//            $data = json_decode(gzinflate(stream_get_contents($pointer)));
-//            echo count($data);
-//            fclose($pointer);
-//            die();
         }
-        $this->io->text("Computed data chain : {$filledDataChain}");
 
         return Command::SUCCESS;
     }
