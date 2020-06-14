@@ -4,6 +4,8 @@
 namespace App\Event;
 
 
+use App\Dto\GithubEvent;
+
 /**
  * Class LineProcessEvent
  * @package App\Event
@@ -11,33 +13,33 @@ namespace App\Event;
 class LineProcessEvent
 {
     /**
-     * @var string $jsonLine
+     * @var GithubEvent $githubEvent
      */
-    protected $jsonLine;
+    protected $githubEvent;
 
     /**
-     * @param string $jsonLine
+     * @param GithubEvent $githubEvent
      * @return self
      */
-    public static function createFromJsonLine(string $jsonLine): self
+    public static function createFromGithubEvent(GithubEvent $githubEvent): self
     {
-        return new static($jsonLine);
+        return new static($githubEvent);
     }
 
     /**
      * LineProcessEvent constructor.
-     * @param string $jsonLine
+     * @param GithubEvent $githubEvent
      */
-    protected function __construct(string $jsonLine)
+    protected function __construct(GithubEvent $githubEvent)
     {
-        $this->jsonLine = $jsonLine;
+        $this->githubEvent = $githubEvent;
     }
 
     /**
-     * @return string
+     * @return GithubEvent
      */
-    public function getJsonLine(): string
+    public function getGithubEvent(): GithubEvent
     {
-        return $this->jsonLine;
+        return $this->githubEvent;
     }
 }
