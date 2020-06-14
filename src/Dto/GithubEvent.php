@@ -25,7 +25,6 @@ class GithubEvent implements DtoInterface
      */
     protected $type;
 
-
     /**
      * @var GithubRepo $repo
      * @Assert\NotBlank()
@@ -38,6 +37,11 @@ class GithubEvent implements DtoInterface
      */
     protected $payload;
 
+    /**
+     * @var \DateTime $createdAt
+     */
+    protected $createdAt;
+
 
     /**
      * GithubEvent constructor.
@@ -45,13 +49,15 @@ class GithubEvent implements DtoInterface
      * @param string $type
      * @param GithubRepo $repo
      * @param array $payload
+     * @param \DateTime $createdAt
      */
-    public function __construct(string $id, string $type, GithubRepo $repo, array $payload)
+    public function __construct(string $id, string $type, GithubRepo $repo, array $payload, \DateTime $createdAt)
     {
         $this->id = $id;
         $this->type = $type;
         $this->repo = $repo;
         $this->payload = $payload;
+        $this->createdAt = $createdAt;
     }
 
     /**
@@ -78,7 +84,6 @@ class GithubEvent implements DtoInterface
         return $this->repo;
     }
 
-
     /**
      * @return array
      */
@@ -86,5 +91,14 @@ class GithubEvent implements DtoInterface
     {
         return $this->payload;
     }
+
+    /**
+     * @return \DateTime
+     */
+    public function getCreatedAt(): \DateTime
+    {
+        return $this->createdAt;
+    }
+
 
 }
