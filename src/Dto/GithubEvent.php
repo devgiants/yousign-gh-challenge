@@ -11,7 +11,7 @@ use Symfony\Component\Validator\Constraints as Assert;
  * Class GithubEvent
  * @package App\Dto
  */
-class GithubEvent
+class GithubEvent implements DtoInterface
 {
     /**
      * @var string $id

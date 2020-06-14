@@ -9,7 +9,7 @@ namespace App\Dto;
  * Class PushEventPayload
  * @package App\Dto
  */
-class PushEventPayload
+class PushEventPayload implements DtoInterface
 {
 
 }
