@@ -18,7 +18,7 @@ class Commit implements EntityInterface
     protected $id;
 
     /**
-     * @ORM\Column(type="string", length=20)
+     * @ORM\Column(type="string", length=40)
      */
     protected $sha;
 
