@@ -28,6 +28,11 @@ class Commit implements EntityInterface
      */
     protected $githubRepo;
 
+    /**
+     * @ORM\Column(type="text")
+     */
+    private $message;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -53,6 +58,18 @@ class Commit implements EntityInterface
     public function setGithubRepo(?GithubRepo $githubRepo): self
     {
         $this->githubRepo = $githubRepo;
+
+        return $this;
+    }
+
+    public function getMessage(): ?string
+    {
+        return $this->message;
+    }
+
+    public function setMessage(string $message): self
+    {
+        $this->message = $message;
 
         return $this;
     }
