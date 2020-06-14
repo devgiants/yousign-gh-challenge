@@ -6,9 +6,20 @@ use App\Repository\GithubRepoRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Validator\Constraints as Assert;
 
 /**
- * @ORM\Entity(repositoryClass=GithubRepoRepository::class)
+ * @ORM\Entity(
+ *     repositoryClass=GithubRepoRepository::class
+ * )
+ * @ORM\Table(
+ *      uniqueConstraints={@ORM\UniqueConstraint(name="github_id_index", columns={"github_id"})}
+ * )
+ * @UniqueEntity(
+ *      fields={"githubId"},
+ *      message="Repo ID must be unique"
+ * )
  */
 class GithubRepo implements EntityInterface
 {
@@ -36,6 +47,7 @@ class GithubRepo implements EntityInterface
 
     /**
      * @ORM\Column(type="integer")
+     * @Assert\Unique()
      */
     protected $githubId;
 
