@@ -20,7 +20,7 @@ class Commit implements EntityInterface
     /**
      * @ORM\Column(type="string", length=20)
      */
-    protected $sha1;
+    protected $sha;
 
     /**
      * @ORM\ManyToOne(targetEntity=GithubRepo::class, inversedBy="commits")
@@ -36,21 +36,21 @@ class Commit implements EntityInterface
     /**
      * @ORM\Column(type="datetime")
      */
-    private $createdAt;
+    protected $createdAt;
 
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    public function getSha1(): ?string
+    public function getSha(): ?string
     {
-        return $this->sha1;
+        return $this->sha;
     }
 
-    public function setSha1(string $sha1): self
+    public function setSha(string $sha): self
     {
-        $this->sha1 = $sha1;
+        $this->sha = $sha;
 
         return $this;
     }
