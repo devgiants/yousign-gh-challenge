@@ -1,0 +1,41 @@
+<?php
+
+declare(strict_types=1);
+
+namespace DoctrineMigrations;
+
+use Doctrine\DBAL\Schema\Schema;
+use Doctrine\Migrations\AbstractMigration;
+
+/**
+ * Auto-generated Migration: Please modify to your needs!
+ */
+final class Version20200614123001 extends AbstractMigration
+{
+    public function getDescription() : string
+    {
+        return '';
+    }
+
+    public function up(Schema $schema) : void
+    {
+        // this up() migration is auto-generated, please modify it to your needs
+        $this->abortIf($this->connection->getDatabasePlatform()->getName() !== 'mysql', 'Migration can only be executed safely on \'mysql\'.');
+
+        $this->addSql('CREATE TABLE github_repo (id INT AUTO_INCREMENT NOT NULL, name VARCHAR(255) NOT NULL, url VARCHAR(255) NOT NULL, PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB');
+        $this->addSql('ALTER TABLE commit ADD github_repo_id INT NOT NULL');
+        $this->addSql('ALTER TABLE commit ADD CONSTRAINT FK_4ED42EADB23C03A9 FOREIGN KEY (github_repo_id) REFERENCES github_repo (id)');
+        $this->addSql('CREATE INDEX IDX_4ED42EADB23C03A9 ON commit (github_repo_id)');
+    }
+
+    public function down(Schema $schema) : void
+    {
+        // this down() migration is auto-generated, please modify it to your needs
+        $this->abortIf($this->connection->getDatabasePlatform()->getName() !== 'mysql', 'Migration can only be executed safely on \'mysql\'.');
+
+        $this->addSql('ALTER TABLE commit DROP FOREIGN KEY FK_4ED42EADB23C03A9');
+        $this->addSql('DROP TABLE github_repo');
+        $this->addSql('DROP INDEX IDX_4ED42EADB23C03A9 ON commit');
+        $this->addSql('ALTER TABLE commit DROP github_repo_id');
+    }
+}
