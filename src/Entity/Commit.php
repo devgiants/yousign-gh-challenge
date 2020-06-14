@@ -31,7 +31,7 @@ class Commit implements EntityInterface
     /**
      * @ORM\Column(type="text")
      */
-    private $message;
+    protected $message;
 
     public function getId(): ?int
     {

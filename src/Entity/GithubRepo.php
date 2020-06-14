@@ -37,7 +37,7 @@ class GithubRepo implements EntityInterface
     /**
      * @ORM\Column(type="integer")
      */
-    private $githubId;
+    protected $githubId;
 
     public function __construct()
     {
