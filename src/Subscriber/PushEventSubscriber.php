@@ -81,6 +81,7 @@ class PushEventSubscriber implements EventSubscriberInterface, LineProcessEventS
         }
 
         // Handle repo
+        /** @var GithubRepoEntity $repoEntity */
         $repoEntity = $this->repoAssembler->getEntity(GithubRepoEntity::class, $githubEvent->getRepo());
 
         // Retrieve commits data
@@ -103,14 +104,14 @@ class PushEventSubscriber implements EventSubscriberInterface, LineProcessEventS
         foreach ($commits as $commit) {
             /** @var CommitEntity $commitEntity */
             $commitEntity = $this->commitAssembler->getEntity(CommitEntity::class, $commit);
-            $commitEntity->setCreatedAt($githubEvent->getCreatedAt());
+            $commitEntity
+                ->setCreatedAt($githubEvent->getCreatedAt())
+                ->setGithubRepo($repoEntity)
+            ;
         }
 
-        $this->entityManager->flush();
-
-        // For memory savings
-        $this->entityManager->clear();
         unset($repoEntity);
+        unset($githubEvent);
     }
 
     /**

@@ -8,6 +8,7 @@ use App\Event\LineProcessEvent;
 use App\Exception\DayNotValidException;
 use App\Exception\GithubEventNotSupportedException;
 use App\Model\Person;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -42,6 +43,8 @@ class ImportGithubEventsCommand extends Command
 
     public const DATA_CHAIN = 'https://data.gharchive.org/' . self::YEAR . '-' . self::MONTH . '-' . self::DAY . '-' . self::HOUR . '.json.gz';
 
+    public const BATCH_SIZE = 500;
+
     protected static $defaultName = 'app:import:github_events';
 
 
@@ -54,6 +57,11 @@ class ImportGithubEventsCommand extends Command
      * @var Serializer $serializer
      */
     protected $serializer;
+
+    /**
+     * @var EntityManagerInterface $entityManager
+     */
+    protected $entityManager;
 
     /**
      * @var InputInterface $input
@@ -85,11 +93,16 @@ class ImportGithubEventsCommand extends Command
      * ImportGithubEventsCommand constructor.
      * @param EventDispatcherInterface $eventDispatcher
      * @param SerializerInterface $serializer
+     * @param EntityManagerInterface $entityManager
      */
-    public function __construct(EventDispatcherInterface $eventDispatcher, SerializerInterface $serializer)
-    {
+    public function __construct(
+        EventDispatcherInterface $eventDispatcher,
+        SerializerInterface $serializer,
+        EntityManagerInterface $entityManager
+    ) {
         $this->eventDispatcher = $eventDispatcher;
         $this->serializer = $serializer;
+        $this->entityManager = $entityManager;
         parent::__construct();
     }
 
@@ -164,6 +177,11 @@ class ImportGithubEventsCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        if (ob_get_level()) {
+            ob_end_clean();
+        }
+        $this->entityManager->getConnection()->getConfiguration()->setSQLLogger(null);
+
         $this->input = $input;
         $this->output = $output;
         $this->io = new SymfonyStyle($input, $output);
@@ -196,11 +214,10 @@ class ImportGithubEventsCommand extends Command
 //            try {
 //                $this->provideJsonData(str_replace(static::HOUR, $i, $filledDataChain));
 
-            // Loop on results
-            $roJsonFp = fopen(static::CURRENT_JSON_FILE_PATH, 'r');
 
             $this->io->text('Handle...');
-            while (false !== ($jsonLine = fgets($roJsonFp))) {
+//            while (false !== ($jsonLine = fgets($roJsonFp))) {
+            foreach ($this->getLines(static::CURRENT_JSON_FILE_PATH) as $n => $jsonLine) {
                 // Normalize global event with payload untouched
                 /** @var GithubEvent $githubEvent */
                 $githubEvent = $this->serializer->deserialize($jsonLine, GithubEvent::class, 'json');
@@ -210,11 +227,59 @@ class ImportGithubEventsCommand extends Command
                     LineProcessEvent::createFromGithubEvent($githubEvent),
                     GithubArchiveEvents::LINE_PROCESS
                 );
+                unset($githubEvent);
+                unset($jsonLine);
+
+
+
+                if ($n % static::BATCH_SIZE == 0) {
+
+                    $this->io->text($this->convert(memory_get_usage(true)) . ' - ' . $n);
+
+                    // For memory savings
+                    $this->entityManager->flush();
+                    $this->entityManager->clear();
+                    flush();
+                    gc_collect_cycles();
+                }
             }
+
+            $this->entityManager->flush();
+            $this->entityManager->clear();
+            flush();
+            gc_collect_cycles();
 //            } catch (\Exception $exception) {
 //            }
         }
 
         return Command::SUCCESS;
+    }
+
+    /**
+     * @param $size
+     * @return string
+     */
+    protected function convert($size)
+    {
+        $unit = array('b', 'kb', 'mb', 'gb', 'tb', 'pb');
+        return @round($size / pow(1024, ($i = floor(log($size, 1024)))), 2) . ' ' . $unit[$i];
+    }
+
+    /**
+     * To limit memory consumption by yelding line instead of building an array
+     * @param $file
+     * @return \Generator
+     */
+    protected function getLines($file)
+    {
+        $f = fopen($file, 'r');
+
+        try {
+            while ($line = fgets($f)) {
+                yield $line;
+            }
+        } finally {
+            fclose($f);
+        }
     }
 }
