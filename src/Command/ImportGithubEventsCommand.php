@@ -10,6 +10,7 @@ use App\Event\LineProcessEvent;
 use App\Exception\DayNotValidException;
 use App\Exception\GithubEventNotSupportedException;
 use App\Exception\HourNotValidException;
+use App\Provider\JsonDataProvider;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -33,10 +34,6 @@ class ImportGithubEventsCommand extends Command
     public const HOUR_OPTION_NAME = 'hour';
     public const TYPE_OPTION_PUSH = 'PushEvent';
 
-    // Placeholder constants
-
-    public const TEMP_GZ_FILE_PATH = '/tmp/data.gz';
-    public const CURRENT_JSON_FILE_PATH = '/tmp/data.json';
 
     public const DATA_CHAIN = 'https://data.gharchive.org/%s-%s-%s-%s.json.gz';
 
@@ -59,6 +56,11 @@ class ImportGithubEventsCommand extends Command
      * @var EntityManagerInterface $entityManager
      */
     protected $entityManager;
+
+    /**
+     * @var JsonDataProvider $jsonDataProvder
+     */
+    protected $jsonDataProvider;
 
     /**
      * @var InputInterface $input
@@ -96,15 +98,19 @@ class ImportGithubEventsCommand extends Command
      * @param EventDispatcherInterface $eventDispatcher
      * @param SerializerInterface $serializer
      * @param EntityManagerInterface $entityManager
+     * @param JsonDataProvider $jsonDataProvider
      */
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
         SerializerInterface $serializer,
-        EntityManagerInterface $entityManager
+        EntityManagerInterface $entityManager,
+        JsonDataProvider $jsonDataProvider
     ) {
         $this->eventDispatcher = $eventDispatcher;
         $this->serializer = $serializer;
         $this->entityManager = $entityManager;
+        $this->jsonDataProvider = $jsonDataProvider;
+
         parent::__construct();
     }
 
@@ -165,29 +171,6 @@ class ImportGithubEventsCommand extends Command
 
 
     /**
-     * This store in temporary files the JSON data
-     * @param string $finalDataChain
-     * TODO externalize in JsonDataProvider class
-     */
-    protected function provideJsonData(string $finalDataChain)
-    {
-        // Get data
-        $this->io->text('Get data from GitHub...');
-        file_put_contents(static::TEMP_GZ_FILE_PATH, file_get_contents($finalDataChain));
-
-        // Extraction
-        $this->io->text('Extract...');
-        $gzFp = gzopen(static::TEMP_GZ_FILE_PATH, 'rb');
-        $jsonFp = fopen(static::CURRENT_JSON_FILE_PATH, 'wb');
-        while (!gzeof($gzFp)) {
-            fwrite($jsonFp, gzread($gzFp, 4096));
-        }
-        gzclose($gzFp);
-        unlink(static::TEMP_GZ_FILE_PATH);
-        fclose($jsonFp);
-    }
-
-    /**
      * @inheritDoc
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -217,11 +200,12 @@ class ImportGithubEventsCommand extends Command
         $this->io->section("Retrieving for {$this->dayToRetrieve->format('d/m/Y')} - {$this->hourToRetrieve}h");
 
         try {
-            $this->provideJsonData($filledDataChain);
+            $this->io->text('Get data from GitHub and extract...');
+            ($this->jsonDataProvider)($filledDataChain);
 
 
             $this->io->text('Handle...');
-            foreach ($this->getLines(static::CURRENT_JSON_FILE_PATH) as $n => $jsonLine) {
+            foreach ($this->getLines(JsonDataProvider::CURRENT_JSON_FILE_PATH) as $n => $jsonLine) {
                 // Normalize global event with payload untouched
                 /** @var GithubEvent $githubEvent */
                 $githubEvent = $this->serializer->deserialize($jsonLine, GithubEvent::class, 'json');
