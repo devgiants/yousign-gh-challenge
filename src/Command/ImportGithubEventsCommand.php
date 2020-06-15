@@ -10,6 +10,8 @@ use App\Event\LineProcessEvent;
 use App\Exception\DayNotValidException;
 use App\Exception\GithubEventNotSupportedException;
 use App\Exception\HourNotValidException;
+use App\Helper\ConvertMemory;
+use App\Helper\FileLinesGenerator;
 use App\Provider\JsonDataProvider;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Command\Command;
@@ -64,6 +66,16 @@ class ImportGithubEventsCommand extends Command
     protected $jsonDataProvider;
 
     /**
+     * @var ConvertMemory $convertMemory
+     */
+    protected $convertMemory;
+
+    /**
+     * @var FileLinesGenerator $fileLinesGenerator
+     */
+    protected $fileLinesGenerator;
+
+    /**
      * @var InputInterface $input
      */
     protected $input;
@@ -100,17 +112,23 @@ class ImportGithubEventsCommand extends Command
      * @param SerializerInterface $serializer
      * @param EntityManagerInterface $entityManager
      * @param JsonDataProvider $jsonDataProvider
+     * @param ConvertMemory $convertMemory
+     * @param FileLinesGenerator $fileLinesGenerator
      */
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
         SerializerInterface $serializer,
         EntityManagerInterface $entityManager,
-        JsonDataProvider $jsonDataProvider
+        JsonDataProvider $jsonDataProvider,
+        ConvertMemory $convertMemory,
+        FileLinesGenerator $fileLinesGenerator
     ) {
         $this->eventDispatcher = $eventDispatcher;
         $this->serializer = $serializer;
         $this->entityManager = $entityManager;
         $this->jsonDataProvider = $jsonDataProvider;
+        $this->convertMemory = $convertMemory;
+        $this->fileLinesGenerator = $fileLinesGenerator;
 
         parent::__construct();
     }
@@ -204,10 +222,10 @@ class ImportGithubEventsCommand extends Command
             $this->io->text('Get data from GitHub and extract...');
             ($this->jsonDataProvider)($filledDataChain);
 
-            
+
             $progress = $this->createProgressBar(0, 'Working...');
 
-            foreach ($this->getLines(JsonDataProvider::CURRENT_JSON_FILE_PATH) as $n => $jsonLine) {
+            foreach (($this->fileLinesGenerator)(JsonDataProvider::CURRENT_JSON_FILE_PATH) as $n => $jsonLine) {
                 // Normalize global event with payload untouched
                 /** @var GithubEvent $githubEvent */
                 $githubEvent = $this->serializer->deserialize($jsonLine, GithubEvent::class, 'json');
@@ -223,7 +241,10 @@ class ImportGithubEventsCommand extends Command
 
                 if ($n % static::BATCH_SIZE == 0) {
                     $progress->setMaxSteps(($n + 1) * static::BATCH_SIZE);
-                    $progress->setMessage($this->convert(memory_get_usage(true)), 'memory');
+                    $progress->setMessage(
+                        ($this->convertMemory)(memory_get_usage(true)),
+                        'memory'
+                    );
 
                     // For memory savings
                     $this->entityManager->flush();
@@ -250,7 +271,6 @@ class ImportGithubEventsCommand extends Command
     }
 
     /**
-     * @param OutputInterface $output
      * @param int $max
      * @param string|null $msg
      *
@@ -273,17 +293,6 @@ class ImportGithubEventsCommand extends Command
     }
 
     /**
-     * @param $size
-     * @return string
-     * TODO : externalize in Convert utility
-     */
-    protected function convert($size)
-    {
-        $unit = array('b', 'kb', 'mb', 'gb', 'tb', 'pb');
-        return @round($size / pow(1024, ($i = floor(log($size, 1024)))), 2) . ' ' . $unit[$i];
-    }
-
-    /**
      * To limit memory consumption by yelding line instead of building an array
      * @param $file
      * @return \Generator
@@ -291,14 +300,5 @@ class ImportGithubEventsCommand extends Command
      */
     protected function getLines($file)
     {
-        $f = fopen($file, 'r');
-
-        try {
-            while ($line = fgets($f)) {
-                yield $line;
-            }
-        } finally {
-            fclose($f);
-        }
     }
 }
