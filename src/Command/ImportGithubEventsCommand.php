@@ -13,6 +13,7 @@ use App\Exception\HourNotValidException;
 use App\Provider\JsonDataProvider;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -203,8 +204,9 @@ class ImportGithubEventsCommand extends Command
             $this->io->text('Get data from GitHub and extract...');
             ($this->jsonDataProvider)($filledDataChain);
 
+            
+            $progress = $this->createProgressBar(0, 'Working...');
 
-            $this->io->text('Handle...');
             foreach ($this->getLines(JsonDataProvider::CURRENT_JSON_FILE_PATH) as $n => $jsonLine) {
                 // Normalize global event with payload untouched
                 /** @var GithubEvent $githubEvent */
@@ -220,14 +222,16 @@ class ImportGithubEventsCommand extends Command
 
 
                 if ($n % static::BATCH_SIZE == 0) {
-                    // TODO use progress bar instead
-                    $this->io->text($this->convert(memory_get_usage(true)) . ' - ' . $n);
+                    $progress->setMaxSteps(($n + 1) * static::BATCH_SIZE);
+                    $progress->setMessage($this->convert(memory_get_usage(true)), 'memory');
 
                     // For memory savings
                     $this->entityManager->flush();
                     $this->entityManager->clear();
                     flush();
                     gc_collect_cycles();
+
+                    $progress->advance(static::BATCH_SIZE);
                 }
             }
 
@@ -235,12 +239,37 @@ class ImportGithubEventsCommand extends Command
             $this->entityManager->clear();
             flush();
             gc_collect_cycles();
+
+            $progress->finish();
         } catch (\Exception $exception) {
             // TODO elaborate
             throw $exception;
         }
 
         return Command::SUCCESS;
+    }
+
+    /**
+     * @param OutputInterface $output
+     * @param int $max
+     * @param string|null $msg
+     *
+     * @return ProgressBar
+     */
+    protected function createProgressBar(int $max = 1, string $msg = null): ProgressBar
+    {
+        ProgressBar::setFormatDefinition(
+            'default',
+            "<comment>%message%</comment> -- %elapsed%\n %current% lines handled \n %memory% memory usage"
+        );
+
+        $section = $this->output->section();
+
+        $progress = new ProgressBar($section, $max);
+        $progress->setFormat('default');
+        $progress->setMessage($msg);
+
+        return $progress;
     }
 
     /**
