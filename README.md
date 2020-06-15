@@ -15,11 +15,28 @@ HOST_USER=nicolas
 HOST_UID=1000
 HOST_GID=1000
 ```
-1. `make build` to install everything
-2. `make serve` to start application
+2. `make build` to install everything needed for containerization
+3. `make composer-install` speaks for itself
+4. `make migrate` to execute migrations
+
+### PhpMyAdmin
+Accessible on `localhost:8971` by default. Use `MYSQL_USER` and `MYSQL_PASSWORD` to connect.
+
+## Use application
+
+### Start application
+`make serve` to start application
 
 Without any other change, app will be served on `localhost:8970` 
 
+### Import part
 
-### PhpMyAdmin
-Accessible on `localhost:8970` by default. Use `MYSQL_USER` and `MYSQL_PASSWORD` to connect.
+1. `make bash-php` for access bash on PHP container
+2. Execute command such as `php bin/console app:import:github_events --day=20200613 --hour=14 -e prod` to trigger
+Github event import for the 13/06/2020 happened between 14h and 15h.
+
+### API
+TODO
+
+## Design considerations
+TODO
