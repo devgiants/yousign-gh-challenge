@@ -6,10 +6,20 @@ namespace App\Entity;
 
 use App\Repository\CommitRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 /**
  * @ORM\Entity(repositoryClass=CommitRepository::class)
+ *
+ * @ORM\Table(
+ *      uniqueConstraints={@ORM\UniqueConstraint(name="unique_index", columns={"sha", "github_repo_id", "push_id"})}
+ * )
+ * @UniqueEntity(
+ *      fields={"sha", "github_repo_id", "push_id"},
+ *      message="Github repo / SHA / Push ID must be unique"
+ * )
  */
+
 class Commit implements EntityInterface
 {
     /**
@@ -40,16 +50,31 @@ class Commit implements EntityInterface
      */
     protected $createdAt;
 
+    /**
+     * @ORM\Column(type="string")
+     */
+    protected $pushId;
+
+    /**
+     * @return int|null
+     */
     public function getId(): ?int
     {
         return $this->id;
     }
 
+    /**
+     * @return string|null
+     */
     public function getSha(): ?string
     {
         return $this->sha;
     }
 
+    /**
+     * @param string $sha
+     * @return $this
+     */
     public function setSha(string $sha): self
     {
         $this->sha = $sha;
@@ -57,11 +82,18 @@ class Commit implements EntityInterface
         return $this;
     }
 
+    /**
+     * @return GithubRepo|null
+     */
     public function getGithubRepo(): ?GithubRepo
     {
         return $this->githubRepo;
     }
 
+    /**
+     * @param GithubRepo|null $githubRepo
+     * @return $this
+     */
     public function setGithubRepo(?GithubRepo $githubRepo): self
     {
         $this->githubRepo = $githubRepo;
@@ -69,11 +101,18 @@ class Commit implements EntityInterface
         return $this;
     }
 
+    /**
+     * @return string|null
+     */
     public function getMessage(): ?string
     {
         return $this->message;
     }
 
+    /**
+     * @param string $message
+     * @return $this
+     */
     public function setMessage(string $message): self
     {
         $this->message = $message;
@@ -81,14 +120,40 @@ class Commit implements EntityInterface
         return $this;
     }
 
+    /**
+     * @return \DateTimeInterface|null
+     */
     public function getCreatedAt(): ?\DateTimeInterface
     {
         return $this->createdAt;
     }
 
+    /**
+     * @param \DateTimeInterface $createdAt
+     * @return $this
+     */
     public function setCreatedAt(\DateTimeInterface $createdAt): self
     {
         $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getPushId(): ?string
+    {
+        return $this->pushId;
+    }
+
+    /**
+     * @param string $pushId
+     * @return $this
+     */
+    public function setPushId(string $pushId): self
+    {
+        $this->pushId = $pushId;
 
         return $this;
     }

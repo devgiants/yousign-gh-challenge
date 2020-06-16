@@ -93,7 +93,7 @@ class PushEventSubscriber implements EventSubscriberInterface, LineProcessEventS
             $githubEvent->getPayload(),
             PushEventPayload::class,
             null,
-            [AbstractNormalizer::ATTRIBUTES => ['commits']]
+            [AbstractNormalizer::ATTRIBUTES => ['commits', 'pushId']]
         );
 
         // Get commits
@@ -105,11 +105,20 @@ class PushEventSubscriber implements EventSubscriberInterface, LineProcessEventS
         /** @var Commit $commit */
         foreach ($commits as $commit) {
             /** @var CommitEntity $commitEntity */
-            $commitEntity = $this->commitAssembler->getEntity(CommitEntity::class, $commit);
+            $commitEntity = $this->commitAssembler->getEntity(
+                CommitEntity::class,
+                $commit,
+                [
+                    'repo' => $repoEntity,
+                    'push_id' => $pushEventPayload->getPushId()
+                ]
+            );
+
+            // Add missing attributes before saving
             $commitEntity
                 ->setCreatedAt($githubEvent->getCreatedAt())
                 ->setGithubRepo($repoEntity)
-            ;
+                ->setPushId((string)$pushEventPayload->getPushId());
         }
 
         unset($repoEntity);

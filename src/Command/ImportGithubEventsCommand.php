@@ -219,11 +219,11 @@ class ImportGithubEventsCommand extends Command
         $this->io->section("Retrieving for {$this->dayToRetrieve->format('d/m/Y')} - {$this->hourToRetrieve}h");
 
         try {
-            $this->io->text('Get data from GitHub...');
-            $this->jsonDataProvider->retrieveGzipData($filledDataChain);
-
-            $this->io->text('Extract...');
-            $this->jsonDataProvider->extractJsonData();
+//            $this->io->text('Get data from GitHub...');
+//            $this->jsonDataProvider->retrieveGzipData($filledDataChain);
+//
+//            $this->io->text('Extract...');
+//            $this->jsonDataProvider->extractJsonData();
 
             $progress = $this->createProgressBar(0, 'Working...');
 

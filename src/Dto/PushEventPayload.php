@@ -19,9 +19,23 @@ class PushEventPayload implements DtoInterface
      */
     protected $commits;
 
-    public function __construct(array $commits)
+    /**
+     * @var int $pushId
+     */
+    protected $pushId;
+
+    public function __construct(array $commits, int $pushId)
     {
         $this->commits = $commits;
+        $this->pushId = $pushId;
+    }
+
+    /**
+     * @return int
+     */
+    public function getPushId(): int
+    {
+        return $this->pushId;
     }
 
     /**

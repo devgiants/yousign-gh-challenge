@@ -40,8 +40,10 @@ TODO
 
 ## Design considerations
 This challenge is splitted in 2 parts : import command and small API. My internal guidelines : 
-__only do what was asked__ but __keeping a way to make evolve__
-That's why I chose to persist only __commits__ and __repo__.
+balance between __only doing what was asked__ but __keeping a way to make evolve__.
+
+That's why I chose to persist only __commits__ and __repo__, and internalize some event related data 
+directly into commit (domain definition assertion).
 
 ### Import command
 I tried to make something as efficient as I could. Below some speed enhancements :

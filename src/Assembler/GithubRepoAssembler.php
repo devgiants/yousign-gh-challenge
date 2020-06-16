@@ -18,7 +18,7 @@ class GithubRepoAssembler extends Assembler implements AssemblerInterface
     /**
      * @inheritDoc
      */
-    public function getDTO(DtoInterface $dto, EntityInterface $entity): DtoInterface
+    public function getDTO(DtoInterface $dto, EntityInterface $entity, array $params = []): DtoInterface
     {
         // TODO: Implement getDTO() method.
     }
@@ -26,7 +26,7 @@ class GithubRepoAssembler extends Assembler implements AssemblerInterface
     /**
      * @inheritDoc
      */
-    public function getEntity(string $entityFqcn, DtoInterface $dto): EntityInterface
+    public function getEntity(string $entityFqcn, DtoInterface $dto, array $params = []): EntityInterface
     {
         $wasNew = false;
 
