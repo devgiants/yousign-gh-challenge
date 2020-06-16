@@ -17,7 +17,7 @@ HOST_GID=1000
 ```
 2. `make build` to install everything needed for containerization
 3. `make composer-install` speaks for itself
-4. `make migrate` to execute migrations
+4. `make migrate` to execute migrations on database
 
 ### PhpMyAdmin
 Accessible on `localhost:8971` by default. Use `MYSQL_USER` and `MYSQL_PASSWORD` to connect.
@@ -33,10 +33,24 @@ Without any other change, app will be served on `localhost:8970`
 
 1. `make bash-php` for access bash on PHP container
 2. Execute command such as `php bin/console app:import:github_events --day=20200613 --hour=14 -e prod` to trigger
-Github event import for the 13/06/2020 happened between 14h and 15h.
+Github events import for the 13/06/2020 happened between 14h and 15h.
 
 ### API
 TODO
 
 ## Design considerations
-TODO
+This challenge is splitted in 2 parts : import command and small API. My internal guidelines : 
+__only do what was asked__ but __keeping a way to make evolve__
+That's why I chose to persist only __commits__ and __repo__.
+
+### Import command
+I tried to make something as efficient as I could. Below some speed enhancements :
+- Garbage collector manual calls
+- Unset variables uneeded anymore
+- Doctrine adjustments for performances (degrading logging data)
+
+As I wanted to keep a loose coupling between import process and persistence : 
+- I used DTOs coupled with Symfony serialize component to stick closely to the data I got in file.
+- I fired an event in command that allow listeners to hook on. For now, only pushes event listener is made.
+
+This approach could lever a future asynchonous handling (using RabbitMQ or some async queue)
