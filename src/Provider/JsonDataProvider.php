@@ -13,11 +13,15 @@ class JsonDataProvider
     /**
      * @param string $finalDataChain
      */
-    public function __invoke(string $finalDataChain)
+    public function retrieveGzipData(string $finalDataChain)
     {
         // Get data
         file_put_contents(static::TEMP_GZ_FILE_PATH, file_get_contents($finalDataChain));
 
+    }
+
+    public function extractJsonData()
+    {
         // Extraction
         $gzFp = gzopen(static::TEMP_GZ_FILE_PATH, 'rb');
         $jsonFp = fopen(static::CURRENT_JSON_FILE_PATH, 'wb');
