@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use ApiPlatform\Core\Annotation\ApiProperty;
+use ApiPlatform\Core\Annotation\ApiResource;
 use App\Repository\CommitRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * @ORM\Entity(repositoryClass=CommitRepository::class)
@@ -18,8 +21,22 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
  *      fields={"sha", "github_repo_id", "push_id"},
  *      message="Github repo / SHA / Push ID must be unique"
  * )
+ * @ApiResource(
+ *     collectionOperations={
+ *          "get"={
+ *              "normalization_context"={"groups"={"list"}},
+ *              "denormalization_context"={"groups"={"list"}}
+ *          },
+ *      },
+ *     itemOperations={
+ *         "get"={
+ *             "controller"=NotFoundAction::class,
+ *             "read"=false,
+ *             "output"=false,
+ *         },
+ *     },
+ * )
  */
-
 class Commit implements EntityInterface
 {
     /**
@@ -31,6 +48,7 @@ class Commit implements EntityInterface
 
     /**
      * @ORM\Column(type="string", length=40)
+     * @Groups({"list"})
      */
     protected $sha;
 
