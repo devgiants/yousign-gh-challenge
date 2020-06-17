@@ -6,6 +6,7 @@ namespace App\Entity;
 
 use ApiPlatform\Core\Annotation\ApiFilter;
 use ApiPlatform\Core\Bridge\Doctrine\Orm\Filter\DateFilter;
+use ApiPlatform\Core\Bridge\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Core\Annotation\ApiResource;
 use App\Repository\CommitRepository;
 use Doctrine\ORM\Mapping as ORM;
@@ -16,7 +17,8 @@ use Symfony\Component\Serializer\Annotation\Groups;
  * @ORM\Entity(repositoryClass=CommitRepository::class)
  *
  * @ORM\Table(
- *      uniqueConstraints={@ORM\UniqueConstraint(name="unique_index", columns={"sha", "github_repo_id", "push_id"})}
+ *      uniqueConstraints={@ORM\UniqueConstraint(name="unique_index", columns={"sha", "github_repo_id", "push_id"})},
+ *      indexes={@ORM\Index(name="fulltext_search_idx", columns={"message"}, flags={"fulltext"})}
  * )
  * @UniqueEntity(
  *      fields={"sha", "github_repo_id", "push_id"},
@@ -38,6 +40,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
  *     },
  * )
  * @ApiFilter(DateFilter::class, properties={"createdAt", DateFilter::EXCLUDE_NULL})
+ * @ApiFilter(SearchFilter::class, properties={"message": "partial"})
  */
 class Commit implements EntityInterface
 {
@@ -62,6 +65,7 @@ class Commit implements EntityInterface
 
     /**
      * @ORM\Column(type="text")
+     * @Groups({"list"})
      */
     protected $message;
 
