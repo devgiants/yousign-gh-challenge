@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
-use ApiPlatform\Core\Annotation\ApiProperty;
+use ApiPlatform\Core\Annotation\ApiFilter;
+use ApiPlatform\Core\Bridge\Doctrine\Orm\Filter\DateFilter;
 use ApiPlatform\Core\Annotation\ApiResource;
 use App\Repository\CommitRepository;
 use Doctrine\ORM\Mapping as ORM;
@@ -36,6 +37,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
  *         },
  *     },
  * )
+ * @ApiFilter(DateFilter::class, properties={"createdAt", DateFilter::EXCLUDE_NULL})
  */
 class Commit implements EntityInterface
 {
@@ -65,6 +67,7 @@ class Commit implements EntityInterface
 
     /**
      * @ORM\Column(type="datetime")
+     * @Groups({"list"})
      */
     protected $createdAt;
 
