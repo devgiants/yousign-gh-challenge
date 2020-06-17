@@ -66,3 +66,11 @@ The project scope makes me limit operations to only 2 :
 Complete HYDRA response from ApiPlatform gives out-of-the-box handy stuff such as __complete collection count__, 
 __page number__, __total number of pages__. All this can be used by a front client to quickly setup part of given 
 dashboard in picture.
+
+## TODO :
+- Better code organization
+- Fix batch processing repo storage design flaw
+- Add more UT, and some IT as well
+- Add Redis or APCu cache storage for search queries. Also store commit spread per hour for 
+each search in cache
+- Introduce custom endpoint for getting commit spread data
