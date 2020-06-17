@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Behavior\Uuidable;
 use App\Repository\GithubRepoRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -25,12 +26,7 @@ use Symfony\Component\Validator\Constraints as Assert;
  */
 class GithubRepo implements EntityInterface
 {
-    /**
-     * @ORM\Id()
-     * @ORM\GeneratedValue()
-     * @ORM\Column(type="integer")
-     */
-    protected $id;
+    use Uuidable;
 
     /**
      * @ORM\Column(type="string", length=255)
@@ -56,11 +52,6 @@ class GithubRepo implements EntityInterface
     public function __construct()
     {
         $this->commits = new ArrayCollection();
-    }
-
-    public function getId(): ?int
-    {
-        return $this->id;
     }
 
     public function getName(): ?string

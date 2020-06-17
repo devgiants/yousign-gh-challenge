@@ -8,6 +8,7 @@ use ApiPlatform\Core\Annotation\ApiFilter;
 use ApiPlatform\Core\Bridge\Doctrine\Orm\Filter\DateFilter;
 use ApiPlatform\Core\Bridge\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Core\Annotation\ApiResource;
+use App\Behavior\Uuidable;
 use App\Repository\CommitRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
@@ -44,12 +45,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
  */
 class Commit implements EntityInterface
 {
-    /**
-     * @ORM\Id()
-     * @ORM\GeneratedValue()
-     * @ORM\Column(type="integer")
-     */
-    protected $id;
+    use Uuidable;
 
     /**
      * @ORM\Column(type="string", length=40)
@@ -79,14 +75,6 @@ class Commit implements EntityInterface
      * @ORM\Column(type="string")
      */
     protected $pushId;
-
-    /**
-     * @return int|null
-     */
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
 
     /**
      * @return string|null

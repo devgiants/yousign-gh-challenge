@@ -56,3 +56,13 @@ As I wanted to keep a loose coupling between import process and persistence :
 - I fired an event in command that allow listeners to hook on. For now, only pushes event listener is made.
 
 This approach could lever a future asynchonous handling (using RabbitMQ or some async queue)
+
+### API part
+According to design choices exposed above, `Commit` entity represent a correct resource (from a REST POV).
+The project scope makes me limit operations to only 2 : 
+- Collection operation : `GET /commits`, with date and search filter
+- Item operation : `GET /commit`, to retrieve details from master listing view (hypothetical)
+
+Complete HYDRA response from ApiPlatform gives out-of-the-box handy stuff such as __complete collection count__, 
+__page number__, __total number of pages__. All this can be used by a front client to quickly setup part of given 
+dashboard in picture.
