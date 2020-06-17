@@ -149,7 +149,7 @@ class ImportGithubEventsCommand extends Command
             )
             ->addOption(
                 static::HOUR_OPTION_NAME,
-                'hh',
+                'H',
                 InputOption::VALUE_REQUIRED,
                 'the hour you want to retrieve commits from. 0-23',
                 0
