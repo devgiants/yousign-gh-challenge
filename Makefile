@@ -43,6 +43,9 @@ install-symfony: build
 	# Install maker
 	docker-compose exec -u www-data php composer require symfony/maker-bundle --dev
 
+run-tests: up
+	docker-compose exec -u www-data php bin/phpunit --coverage-html=public/tests
+
 # Build app
 install-app: build composer-install migrate
 
