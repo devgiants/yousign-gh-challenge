@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Tests;
+namespace App\Tests\UT;
 
 use App\Provider\JsonDataProvider;
 use PHPUnit\Framework\TestCase;

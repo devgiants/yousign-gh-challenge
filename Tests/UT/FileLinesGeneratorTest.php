@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Tests;
+namespace App\Tests\UT;
 
 use App\Helper\FileLinesGenerator;
 use App\Helper\MemoryConverter;

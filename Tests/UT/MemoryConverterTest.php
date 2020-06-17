@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Tests;
+namespace App\Tests\UT;
 
 use App\Helper\MemoryConverter;
 use PHPUnit\Framework\TestCase;
