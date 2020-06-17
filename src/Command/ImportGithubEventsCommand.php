@@ -10,7 +10,7 @@ use App\Event\LineProcessEvent;
 use App\Exception\DayNotValidException;
 use App\Exception\GithubEventNotSupportedException;
 use App\Exception\HourNotValidException;
-use App\Helper\ConvertMemory;
+use App\Helper\MemoryConverter;
 use App\Helper\FileLinesGenerator;
 use App\Provider\JsonDataProvider;
 use Doctrine\ORM\EntityManagerInterface;
@@ -66,9 +66,9 @@ class ImportGithubEventsCommand extends Command
     protected $jsonDataProvider;
 
     /**
-     * @var ConvertMemory $convertMemory
+     * @var MemoryConverter $memoryConverter
      */
-    protected $convertMemory;
+    protected $memoryConverter;
 
     /**
      * @var FileLinesGenerator $fileLinesGenerator
@@ -112,7 +112,7 @@ class ImportGithubEventsCommand extends Command
      * @param SerializerInterface $serializer
      * @param EntityManagerInterface $entityManager
      * @param JsonDataProvider $jsonDataProvider
-     * @param ConvertMemory $convertMemory
+     * @param MemoryConverter $memoryConverter
      * @param FileLinesGenerator $fileLinesGenerator
      */
     public function __construct(
@@ -120,14 +120,14 @@ class ImportGithubEventsCommand extends Command
         SerializerInterface $serializer,
         EntityManagerInterface $entityManager,
         JsonDataProvider $jsonDataProvider,
-        ConvertMemory $convertMemory,
+        MemoryConverter $memoryConverter,
         FileLinesGenerator $fileLinesGenerator
     ) {
         $this->eventDispatcher = $eventDispatcher;
         $this->serializer = $serializer;
         $this->entityManager = $entityManager;
         $this->jsonDataProvider = $jsonDataProvider;
-        $this->convertMemory = $convertMemory;
+        $this->memoryConverter = $memoryConverter;
         $this->fileLinesGenerator = $fileLinesGenerator;
 
         parent::__construct();
@@ -244,7 +244,7 @@ class ImportGithubEventsCommand extends Command
                 if ($n % static::BATCH_SIZE == 0) {
                     $progress->setMaxSteps(($n + 1) * static::BATCH_SIZE);
                     $progress->setMessage(
-                        ($this->convertMemory)(memory_get_usage(true)),
+                        ($this->memoryConverter)(memory_get_usage(true)),
                         'memory'
                     );
 
