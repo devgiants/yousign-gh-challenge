@@ -17,6 +17,7 @@ class JsonProviderTest extends TestCase
      */
     public function testFileGathering()
     {
+        // Unit test are framework agnostic. No service injection here
         $jsonProvider = new JsonDataProvider();
         $dataChain = 'https://data.gharchive.org/2015-01-01-15.json.gz';
 
@@ -32,6 +33,7 @@ class JsonProviderTest extends TestCase
      */
     public function testFileExtraction()
     {
+        // Unit test are framework agnostic. No service injection here
         $jsonProvider = new JsonDataProvider();
         // Extract JSON data
         $jsonProvider->extractJsonData();
