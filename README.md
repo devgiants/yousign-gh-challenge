@@ -36,14 +36,14 @@ Without any other change, app will be served on `localhost:8970`
 Github events import for the 13/06/2020 happened between 14h and 15h.
 
 ### API
-TODO
+API doc (OAS 3.0) is available on `localhost:9870/api`.
 
 ## Design considerations
-This challenge is splitted in 2 parts : import command and small API. My internal guidelines : 
+This challenge is splitted in 2 parts : __import command__ and small __API__. My internal guidelines : 
 balance between __only doing what was asked__ but __keeping a way to make evolve__.
 
-That's why I chose to persist only __commits__ and __repo__, and internalize some event related data 
-directly into commit (domain definition assertion).
+That's why I chose to persist only __commits__ and __repo__, and internalize some Github event related data 
+directly into commit (domain definition assertion). This avoid unnecessary joint relation, here again related to scope.
 
 ### Import command
 I tried to make something as efficient as I could. Below some speed enhancements :
