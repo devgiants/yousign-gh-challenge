@@ -38,6 +38,10 @@ Github events import for the 13/06/2020 happened between 14h and 15h.
 ### API
 API doc (OAS 3.0) is available on `localhost:8970/api`.
 
+### Tests
+
+Use `make run-tests` for running small testing suite
+
 ## Design considerations
 This challenge is splitted in 2 parts : __import command__ and small __API__. My internal guidelines : 
 balance between __only doing what was asked__ but __keeping a way to make evolve__.
