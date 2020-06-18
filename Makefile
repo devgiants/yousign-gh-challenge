@@ -12,37 +12,6 @@ bash-php: up
 bash-php-root: up
 	docker-compose exec php bash
 
-
-install-symfony: build
-	# Create skeleton using last version available
-#	docker-compose exec -u www-data php symfony new --no-git --version=lts ${RELATIVE_APP_PATH}/tmp
-#
-#	# append SF .env file to stack .env
-#	cat "${RELATIVE_APP_PATH}/tmp/.env" >> .env
-#
-#	# append SF .env file to stack .env
-#	cat "${RELATIVE_APP_PATH}/tmp/.gitignore" >> .gitignore
-#
-#	# remove tmp/.env and /tmp/.gitignore file now its content is appended
-#	rm ${RELATIVE_APP_PATH}/tmp/.env ${RELATIVE_APP_PATH}/tmp/.gitignore
-#
-#	# remove vendor folder as it will be replaced by Symfony one
-#	rm -rf vendor
-#
-#	# move all app up
-#	mv ${RELATIVE_APP_PATH}/tmp/* ${RELATIVE_APP_PATH}
-#	mv ${RELATIVE_APP_PATH}/tmp/.env.test ${RELATIVE_APP_PATH}
-#
-#	 rm tmp folder
-#	rm -r ${RELATIVE_APP_PATH}/tmp
-
-	# Install migrations
-	docker-compose exec -u www-data php composer require doctrine/orm
-	docker-compose exec -u www-data php composer require doctrine/doctrine-migrations-bundle
-
-	# Install maker
-	docker-compose exec -u www-data php composer require symfony/maker-bundle --dev
-
 run-tests: up
 	docker-compose exec -u www-data php bin/phpunit --coverage-html=public/tests
 
@@ -97,7 +66,6 @@ up:
 build:
 	docker-compose up -d --build
 	docker-compose exec php usermod -u ${HOST_UID} www-data
-#	docker-compose exec apache usermod -u ${HOST_UID} www-data
 # Down containers
 down:
 	docker-compose down

@@ -337,16 +337,4 @@ class ImportGithubEventsCommand extends Command
 
         return $progress;
     }
-
-    /**
-     * To limit memory consumption by yelding line instead of building an array
-     *
-     * @param $file
-     *
-     * @return \Generator
-     * TODO : externalize in Memory utility
-     */
-    protected function getLines($file)
-    {
-    }
 }
