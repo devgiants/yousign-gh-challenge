@@ -1,3 +1,6 @@
+[![Code Intelligence Status](https://scrutinizer-ci.com/g/devgiants/yousign-gh-challenge/badges/code-intelligence.svg?b=master)](https://scrutinizer-ci.com/code-intelligence)
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/devgiants/yousign-gh-challenge/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/devgiants/yousign-gh-challenge/?branch=master)
+
 # My Yousign GH Challenge implementation
 
 Based on [this stack](https://github.com/compagnie-hyperactive/docker-boilerplate-symfony).
