@@ -118,7 +118,7 @@ class PushEventSubscriber implements EventSubscriberInterface, LineProcessEventS
             $commitEntity
                 ->setCreatedAt($githubEvent->getCreatedAt())
                 ->setGithubRepo($repoEntity)
-                ->setPushId((string)$pushEventPayload->getPushId());
+                ->setPushId((string) $pushEventPayload->getPushId());
         }
 
         unset($repoEntity);

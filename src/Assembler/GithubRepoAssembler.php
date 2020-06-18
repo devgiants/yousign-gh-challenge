@@ -50,7 +50,7 @@ class GithubRepoAssembler extends Assembler implements AssemblerInterface
             ->setName($dto->getName())
         ;
 
-        if($wasNew) {
+        if ($wasNew) {
             // Must flush each time to ensure repo will be find next time, even if it is inside a same batch
             $this->entityManager->flush();
         }
