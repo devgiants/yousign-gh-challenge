@@ -184,7 +184,7 @@ class ImportGithubEventsCommand extends Command
         $this->dayToRetrieve  = \DateTime::createFromFormat('Ymd', $day);
         $this->hourToRetrieve = $this->input->getOption(static::HOUR_OPTION_NAME);
 
-        if (! $this->dayToRetrieve instanceof \DateTime) {
+        if (!$this->dayToRetrieve instanceof \DateTime) {
             $this->importLogger->addRecord(
                 Logger::ERROR,
                 "Bad import command call : day '{$day}' is not valid"
@@ -193,7 +193,7 @@ class ImportGithubEventsCommand extends Command
             throw new DayNotValidException("Day \"{$day}\" is not properly formatted. Use Ymd format");
         }
 
-        if (! is_numeric($this->hourToRetrieve) || $this->hourToRetrieve < 0 || $this->hourToRetrieve > 23) {
+        if (!is_numeric($this->hourToRetrieve) || $this->hourToRetrieve < 0 || $this->hourToRetrieve > 23) {
             $this->importLogger->addRecord(
                 Logger::ERROR,
                 "Bad import command call : hour '{$this->hourToRetrieve}' is not valid"

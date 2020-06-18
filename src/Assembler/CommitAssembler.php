@@ -33,7 +33,7 @@ class CommitAssembler extends Assembler implements AssemblerInterface
             throw new InvalidArgumentException("This assembler is for commit only");
         }
 
-        if(!isset($params['repo']) || !($params['repo'] instanceof GithubRepo)) {
+        if (!isset($params['repo']) || !($params['repo'] instanceof GithubRepo)) {
             throw new InvalidArgumentException("Miss the repo needed for commit retrieval");
         }
 
