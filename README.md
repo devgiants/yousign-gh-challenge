@@ -36,7 +36,7 @@ Without any other change, app will be served on `localhost:8970`
 Github events import for the 13/06/2020 happened between 14h and 15h.
 
 ### API
-API doc (OAS 3.0) is available on `localhost:9870/api`.
+API doc (OAS 3.0) is available on `localhost:8970/api`.
 
 ## Design considerations
 This challenge is splitted in 2 parts : __import command__ and small __API__. My internal guidelines : 
