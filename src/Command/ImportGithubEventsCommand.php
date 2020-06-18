@@ -14,6 +14,7 @@ use App\Helper\MemoryConverter;
 use App\Helper\FileLinesGenerator;
 use App\Provider\JsonDataProvider;
 use Doctrine\ORM\EntityManagerInterface;
+use Monolog\Logger;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputInterface;
@@ -26,6 +27,7 @@ use Symfony\Component\Serializer\SerializerInterface;
 
 /**
  * Class ImportCommitsCommand
+ *
  * @package App\Command
  */
 class ImportGithubEventsCommand extends Command
@@ -71,6 +73,11 @@ class ImportGithubEventsCommand extends Command
     protected $memoryConverter;
 
     /**
+     * @var Logger $importLogger
+     */
+    protected $importLogger;
+
+    /**
      * @var FileLinesGenerator $fileLinesGenerator
      */
     protected $fileLinesGenerator;
@@ -108,12 +115,14 @@ class ImportGithubEventsCommand extends Command
 
     /**
      * ImportGithubEventsCommand constructor.
+     *
      * @param EventDispatcherInterface $eventDispatcher
      * @param SerializerInterface $serializer
      * @param EntityManagerInterface $entityManager
      * @param JsonDataProvider $jsonDataProvider
      * @param MemoryConverter $memoryConverter
      * @param FileLinesGenerator $fileLinesGenerator
+     * @param Logger $importLogger
      */
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
@@ -121,14 +130,16 @@ class ImportGithubEventsCommand extends Command
         EntityManagerInterface $entityManager,
         JsonDataProvider $jsonDataProvider,
         MemoryConverter $memoryConverter,
-        FileLinesGenerator $fileLinesGenerator
+        FileLinesGenerator $fileLinesGenerator,
+        Logger $importLogger
     ) {
-        $this->eventDispatcher = $eventDispatcher;
-        $this->serializer = $serializer;
-        $this->entityManager = $entityManager;
-        $this->jsonDataProvider = $jsonDataProvider;
-        $this->memoryConverter = $memoryConverter;
+        $this->eventDispatcher    = $eventDispatcher;
+        $this->serializer         = $serializer;
+        $this->entityManager      = $entityManager;
+        $this->jsonDataProvider   = $jsonDataProvider;
+        $this->memoryConverter    = $memoryConverter;
         $this->fileLinesGenerator = $fileLinesGenerator;
+        $this->importLogger       = $importLogger;
 
         parent::__construct();
     }
@@ -168,22 +179,36 @@ class ImportGithubEventsCommand extends Command
      */
     protected function checkInputs()
     {
-        $day = $this->input->getOption(static::DAY_OPTION_NAME);
-        $this->eventTypes = $this->input->getOption(static::TYPE_OPTION_NAME);
-        $this->dayToRetrieve = \DateTime::createFromFormat('Ymd', $day);
+        $day                  = $this->input->getOption(static::DAY_OPTION_NAME);
+        $this->eventTypes     = $this->input->getOption(static::TYPE_OPTION_NAME);
+        $this->dayToRetrieve  = \DateTime::createFromFormat('Ymd', $day);
         $this->hourToRetrieve = $this->input->getOption(static::HOUR_OPTION_NAME);
 
-        if (!$this->dayToRetrieve instanceof \DateTime) {
+        if (! $this->dayToRetrieve instanceof \DateTime) {
+            $this->importLogger->addRecord(
+                Logger::ERROR,
+                "Bad import command call : day '{$day}' is not valid"
+            );
+
             throw new DayNotValidException("Day \"{$day}\" is not properly formatted. Use Ymd format");
         }
 
-        if (!is_numeric($this->hourToRetrieve) || $this->hourToRetrieve < 0 || $this->hourToRetrieve > 23) {
+        if (! is_numeric($this->hourToRetrieve) || $this->hourToRetrieve < 0 || $this->hourToRetrieve > 23) {
+            $this->importLogger->addRecord(
+                Logger::ERROR,
+                "Bad import command call : hour '{$this->hourToRetrieve}' is not valid"
+            );
             throw new HourNotValidException("Hour \"{$this->hourToRetrieve}\" is not properly formatted. 0-23");
         }
 
 
         // TODO to make evolve when other events will be added
         if ($this->eventTypes !== [static::TYPE_OPTION_PUSH]) {
+            $this->importLogger->addRecord(
+                Logger::ERROR,
+                "Bad import command call : unsupported event", $this->eventTypes
+            );
+
             throw new GithubEventNotSupportedException('This event type is not supported yet');
         }
     }
@@ -199,9 +224,9 @@ class ImportGithubEventsCommand extends Command
         }
         $this->entityManager->getConnection()->getConfiguration()->setSQLLogger(null);
 
-        $this->input = $input;
+        $this->input  = $input;
         $this->output = $output;
-        $this->io = new SymfonyStyle($input, $output);
+        $this->io     = new SymfonyStyle($input, $output);
 
         $this->checkInputs();
 
@@ -231,6 +256,15 @@ class ImportGithubEventsCommand extends Command
                 // Normalize global event with payload untouched
                 /** @var GithubEvent $githubEvent */
                 $githubEvent = $this->serializer->deserialize($jsonLine, GithubEvent::class, 'json');
+
+                $this->importLogger->addRecord(
+                    Logger::DEBUG,
+                    "Github event",
+                    [
+                        'event_id' => $githubEvent->getId(),
+                        'event_date' => $githubEvent->getCreatedAt()->format('d/m/Y H:i:s')
+                    ]
+                );
 
                 // Use event to allow flexible payload handling
                 $this->eventDispatcher->dispatch(
@@ -265,6 +299,16 @@ class ImportGithubEventsCommand extends Command
 
             $progress->finish();
         } catch (\Exception $exception) {
+
+            $this->importLogger->addRecord(
+                Logger::ERROR,
+                "Error encountered",
+                [
+                    'code' => $exception->getCode(),
+                    'message' => $exception->getMessage()
+                ]
+            );
+
             // TODO elaborate
             throw $exception;
         }
@@ -296,7 +340,9 @@ class ImportGithubEventsCommand extends Command
 
     /**
      * To limit memory consumption by yelding line instead of building an array
+     *
      * @param $file
+     *
      * @return \Generator
      * TODO : externalize in Memory utility
      */
